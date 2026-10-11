@@ -89,7 +89,7 @@ aws iam create-role \
   --role-name mock-products-api-role \
   --assume-role-policy-document file://trust-policy.json
 
-# 3. Attach basic logging policy
+# 3. Attach standard Lambda execution policy (grants CloudWatch log group/stream writing permissions)
 aws iam attach-role-policy \
   --role-name mock-products-api-role \
   --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
