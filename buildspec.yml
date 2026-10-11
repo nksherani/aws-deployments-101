@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci || npm install
+  pre_build:
+    commands:
+      - echo "Running unit tests..."
+      - npm test
+  build:
+    commands:
+      - echo "Packaging Lambda function..."
+      - mkdir -p dist
+      - zip -j dist/function.zip src/*
+  post_build:
+    commands:
+      - echo "Updating Lambda function code via AWS CLI..."
+      - aws lambda update-function-code --function-name mock-products-api --zip-file fileb://dist/function.zip
+      - echo "Lambda deployment finished on $(date)"
+
+artifacts:
+  files:
+    - dist/function.zip
+    - sam-template.yaml

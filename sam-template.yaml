@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS SAM template for fake Mock Products API Lambda
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+
+Resources:
+  ProductsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: src/lambda.handler
+      Description: Mock Products API serverless backend
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - '*'
+          AllowMethods:
+            - GET
+            - POST
+            - OPTIONS
+      Events:
+        GetAllProducts:
+          Type: HttpApi
+          Properties:
+            Path: /products
+            Method: get
+        GetProductById:
+          Type: HttpApi
+          Properties:
+            Path: /products/{id}
+            Method: get
+        CreateProduct:
+          Type: HttpApi
+          Properties:
+            Path: /products
+            Method: post
+        HealthCheck:
+          Type: HttpApi
+          Properties:
+            Path: /health
+            Method: get
+        OpenApiSpec:
+          Type: HttpApi
+          Properties:
+            Path: /openapi.json
+            Method: get
+
+Outputs:
+  HttpApiUrl:
+    Description: URL endpoint for AWS HTTP API Gateway
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  FunctionUrl:
+    Description: Direct Lambda Function URL (Public)
+    Value: !GetAtt ProductsApiFunctionUrl.FunctionUrl

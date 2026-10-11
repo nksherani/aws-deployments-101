@@ -1,0 +1,64 @@
+name: Deploy Node.js Lambda to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Required for AWS OIDC authentication
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Create Deployment Artifact
+        run: |
+          mkdir -p dist
+          zip -j dist/function.zip src/*
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: dist/function.zip
+
+  deploy-aws-cli:
+    needs: test-and-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+          path: dist
+
+      - name: Configure AWS Credentials (OIDC or Secret Keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update Lambda Code via AWS CLI
+        run: |
+          aws lambda update-function-code \
+            --function-name mock-products-api \
+            --zip-file fileb://dist/function.zip
